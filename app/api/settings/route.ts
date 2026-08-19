@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createAdminClient } from '@/utils/supabase/server'
 import { getStoreSettings, invalidateSettingsCache, DEFAULT_SETTINGS, StoreSettings } from '@/utils/settings'
 import { formatExternalUrl } from '@/utils/url'
+import { verifyStaffAuth } from '@/utils/auth'
 
 export const dynamic = 'force-dynamic'
 
@@ -17,9 +18,14 @@ export async function GET() {
   }
 }
 
-// PUT: Update settings (Admin only)
+// PUT: Update settings (Shop Owner & Admin only)
 export async function PUT(request: NextRequest) {
   try {
+    const auth = await verifyStaffAuth(['shop_owner', 'admin'])
+    if (!auth.authorized) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status })
+    }
+
     const supabase = createAdminClient()
     const body: Partial<StoreSettings> = await request.json()
 
